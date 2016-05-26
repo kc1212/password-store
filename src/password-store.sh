@@ -26,7 +26,7 @@ export GIT_WORK_TREE="${PASSWORD_STORE_GIT:-$PREFIX}"
 
 git_add_file() {
 	[[ -d $GIT_DIR ]] || return
-	if [[ -n $PASSWORD_STORE_GIT_ANNEX ]]; then
+	if [[ $(git annex status 2> /dev/null) ]]; then
 		git annex add "$1" || return
 	else
 		git add "$1" || return
@@ -560,12 +560,15 @@ cmd_copy_move() {
 cmd_git() {
 	if [[ $1 == "init" ]]; then
 		git "$@" || exit 1
-		git_add_file "$PREFIX" "Add current contents of password store."
 
 		echo '*.gpg diff=gpg' > "$PREFIX/.gitattributes"
 		git_add_file .gitattributes "Configure git repository for gpg file diff."
 		git config --local diff.gpg.binary true
 		git config --local diff.gpg.textconv "$GPG -d ${GPG_OPTS[*]}"
+
+		# TODO check existence of git-annex and use yesno()
+		git annex version > /dev/null && git annex init
+		git_add_file "$PREFIX" "Add current contents of password store."
 	elif [[ -d $GIT_DIR ]]; then
 		tmpdir nowarn #Defines $SECURE_TMPDIR. We don't warn, because at most, this only copies encrypted files.
 		export TMPDIR="$SECURE_TMPDIR"
