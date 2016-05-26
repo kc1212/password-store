@@ -26,7 +26,11 @@ export GIT_WORK_TREE="${PASSWORD_STORE_GIT:-$PREFIX}"
 
 git_add_file() {
 	[[ -d $GIT_DIR ]] || return
-	git add "$1" || return
+	if [[ -n $PASSWORD_STORE_GIT_ANNEX ]]; then
+		git annex add "$1" || return
+	else
+		git add "$1" || return
+	fi
 	[[ -n $(git status --porcelain "$1") ]] || return
 	git_commit "$2"
 }
